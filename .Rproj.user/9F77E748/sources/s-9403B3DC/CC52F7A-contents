@@ -1,0 +1,689 @@
+---
+  title: "Cost functions and gradient descent"
+author: "Diego J. Bodas Sagi modified by Jordi Tarroch"
+date: "6 October 2017"
+output:
+  html_document:
+  number_sections: yes
+toc: yes
+toc_float:
+  collapsed: no
+smooth_scroll: no
+pdf_document:
+  toc: yes
+---
+  
+  ![](images/CarlSagan.png)
+
+# Basic R Markdown
+
+Install the rmarkdown package
+
+This is a latex equation, $E = mc^{2}$
+  
+  This is a inline code `print("this is an inline code")`
+
+Set echo = TRUE if you want to include source code in the output
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+For Spanish beginners see: https://markdown.es/sintaxis-markdown/
+  
+  R Markdown Cheat Sheet: https://www.rstudio.com/wp-content/uploads/2015/02/rmarkdown-cheatsheet.pdf 
+
+Other good one: https://guides.github.com/pdfs/markdown-cheatsheet-online.pdf 
+
+Latex symbols: https://en.wikibooks.org/wiki/LaTeX/Mathematics 
+
+# Binary classification
+
+Binary or binomial classification is the task of classifying the elements of a given set into two groups (predicting which group each one belongs to) (@binaryClassification).
+
+An example:
+  
+  ![](http://mlpy.sourceforge.net/docs/3.4/_images/lda_binary.png)
+
+# Logistic Regression
+
+In statistics, logistic regression, or logit regression, or logit model[1] is a regression model where the dependent variable (DV) is categorical (@logisticRegression).
+
+Find the maths here:
+  
+  Given $x$ and $y$ find $\hat{y}$ such as $\hat{y} =  P(y = 1 | x)$ where $0 \leq \hat{y} \leq 1$
+  
+  We need to find $w \in \mathbb{R}^n$ and $b \in \mathbb{R}$ 
+  where $\hat{y} = \sigma(w^Tx + b) = \sigma(z) \approx y$ and
+$\sigma(z) = \frac{1}{1 + e^{-z}}$
+  
+  
+  See the graph in R
+
+```{r}
+Sigmoid <- function(x) { 
+  1 / (1 + exp(-x))
+}
+
+# feed with data
+x <- seq(-5, 5, 0.01)
+
+# and plot
+plot(x, Sigmoid(x), col='blue', ylim = c(-.2, 1))
+abline(h = 0, v = 0, col = "gray60")
+```
+
+The idea is the following:
+  
+  If *z* is very large $\sigma(z) \approx 1$, but if z is a large negative number $\sigma(z) \approx 0$
+  
+  # Loss (error) function
+  
+  As $\hat{y} \approx y$, we have a loss or error function:
+  
+  The logistic regression cost function is the following:
+  
+  $\ell(y, \hat{y}) = -(ylog(\hat{y}) + (1 - y)log(1 - \hat{y})$
+                          
+                          Why this loss function?
+                          
+                          Because if $y = 0$ we want $\hat{y}$ small, if $y = 1$ we want a large value for $\hat{y}$.
+                        In another case, we want to penalize the result.
+                        
+                        # Cost function
+                        
+                        The cost function aggregates the loss function result for every $(x_{i}, y_{i})$. Given *n*, the sample size, the cost function is:
+                          <!-- Comment: 1/n to obtain error average -->
+                          $\jmath(w, b) = \frac{1}{n}\sum_{1}^{n}\ell(y^{i} \hat{y}^{i}) = -\frac{1}{n}\sum_{1}^{n}((y^{i}log(\hat{y}^{i}) + (y^{i} +1)log(1 - \hat{y}^{i}))$
+                                                                                                                      
+                                                                                                                      Remember: $\hat{y} = h_{\theta} = \sigma(w^Tx + b)$ 
+                                                                                                                      
+                                                                                                                      ```{r}
+                                                                                                                    # Ref: https://www.r-bloggers.com/logistic-regression-with-r-step-by-step-implementation-part-2/
+                                                                                                                    # Cost Function
+                                                                                                                    # 
+                                                                                                                    CostFunction <- function(parameters, X, Y) {
+                                                                                                                      n <- nrow(X)
+                                                                                                                      # function to apply (%*% Matrix multiplication)
+                                                                                                                      g <- Sigmoid(X %*% parameters)
+                                                                                                                      J <- (1/n) * sum((-Y * log(g)) - ((1 - Y) * log(1 - g)))
+                                                                                                                      return(J)
+                                                                                                                    }
+                                                                                                                    ```
+                                                                                                                    
+                                                                                                                    So, our mission is to find *w*, and *b*, such that minimizes $\jmath(w, b)$
+                                                                                                                      
+                                                                                                                      To find maximums and minimums we use derivatives. And here the gradient descent appears (@MachineLearningFAQ). 
+                                                                                                                    
+                                                                                                                    ![](https://sebastianraschka.com/images/faq/closed-form-vs-gd/ball.png)
+                                                                                                                    
+                                                                                                                    And, why derivatives?
+                                                                                                                      
+                                                                                                                      ![](https://sebastianraschka.com/images/faq/closed-form-vs-gd/simple_regression.png)
+                                                                                                                    
+                                                                                                                    Use the **chain rule** to obtain the derivatives. 
+                                                                                                                    
+                                                                                                                    The learning rate is paramount. If you set a very high learning rate the algorithm might not converge. On the contrary, with a very low learning rate the learning process could be slow (@learningRate).
+                                                                                                                    
+                                                                                                                    ![](images/learningRate.png)
+                                                                                                                    
+                                                                                                                    Due to this kind of *choices*, experience is a high valueble assset (and Data Science become an **Art** in something aspects)
+                                                                                                                    
+                                                                                                                    The algorithm is the following (\alpha represents the **learning rate**):
+                                                                                                                      
+                                                                                                                      *Repeat until convergence*:
+                                                                                                                      
+                                                                                                                      $w = w - \alpha\frac{\partial\jmath(w, b)}{\partial w}$
+                                                                                                                      
+                                                                                                                      $b = b - \alpha\frac{\partial\jmath(w, b)}{\partial b}$
+                                                                                                                      
+                                                                                                                      *end algorithm*
+                                                                                                                      
+                                                                                                                      Then, remember we want to find W and b that **minimizes the cost function** not the $\hat{y}$ function. 
+                                                                                                                    
+                                                                                                                    \[ \frac{\partial\jmath(w, b)}{\partial \theta_j} = \frac{1}{n} \sum\limits_{i=1}^n (h_{\theta}(x^{(i)}) - y^{(i)}) x_j^{(i)} \] (@derivateCostFunction) 
+                                                                                                                    
+                                                                                                                    where $h_{\theta} = \sigma$
+                                                                                                                      
+                                                                                                                      As $\frac{1}{n}$ is a constant, $\alpha\frac{1}{n}$ is constant too.  
+                                                                                                                    
+                                                                                                                    Other way to see this, is the following. Consider the algorithm as:
+                                                                                                                      
+                                                                                                                      *Repeat until convergence*:
+                                                                                                                      
+                                                                                                                      $w = w - \alpha\frac{\partial\ell(y, \hat{y})}{\partial w}$
+                                                                                                                      
+                                                                                                                      $b = b - \alpha\frac{\partial\ell(y, \hat{y})}{\partial b}$
+                                                                                                                      
+                                                                                                                      *end algorithm*
+                                                                                                                      
+                                                                                                                      -----
+                                                                                                                      
+                                                                                                                      NOTE (trick for the derivatives, using the chain rule): 
+                                                                                                                      
+                                                                                                                      Let $a$ be the sigmoid functions, such that:
+                                                                                                                      
+                                                                                                                      $a = \sigma(z)$, $-e^{-x} = 1 - (1 + e^{-x}) = 1 - \frac{1}{a} = \frac{a-1}{a}$
+                                                                                                                      
+                                                                                                                      ----- 
+                                                                                                                      
+                                                                                                                      An algorithm that always terminates with a desired solution in a finite number of iterations is a **finite algorithm**.
+                                                                                                                    
+                                                                                                                    An **iterative algorithm** is said to converge when as the iterations proceed the output gets closer and closer to a specific value. Convergence to a local minimum can only be guaranteed when the function function is convex.
+                                                                                                                    
+                                                                                                                    ![](https://i.stack.imgur.com/GNBZ4.png)
+                                                                                                                    
+                                                                                                                    We can set up a stopping criterion, such as a finite number of iterations or a required improvement in the cost function. 
+                                                                                                                    
+                                                                                                                    **Iterative algorithms are the core of Machine Learning**, and for this reason, **parallel computing** is so important in Machine Learning and Data Science.
+                                                                                                                    
+                                                                                                                    # Example 
+                                                                                                                    
+                                                                                                                    Suppose that you are an administrator of a university and you want to know the chance of admission of each applicant based on their two exams. You have historical data from previous applicants which can be used as the training data for logistic regression.  Your task is to build a classification model that estimates each applicant’s probability of admission in university (Source:coursera machine learning class and @rbloggers).
+                                                                                                                    
+                                                                                                                    Now, we have understood classification problem that we are going to address. Let us understand the data. In data we have records of previous applicants’ two exams score and label whether applicant got admission or not (1 - if got admission 0 - otherwise).
+                                                                                                                    
+                                                                                                                    Analyze your data
+                                                                                                                    
+                                                                                                                    ```{r}
+                                                                                                                    #Load data
+                                                                                                                    data <- read.csv("data/4_1_data.csv")
+                                                                                                                    
+                                                                                                                    #Create plot
+                                                                                                                    plot(data$score.1, data$score.2, col = as.factor(data$label), xlab = "Score-1", ylab = "Score-2")
+                                                                                                                    ```
+                                                                                                                    
+                                                                                                                    In this case we have two predictor variables (two exams’ scores) and label as response variable. The equation is the following:
+                                                                                                                      
+                                                                                                                      $\hat{y} = \sigma(w_1x_1 + w_2*x_2 + b)$ 
+                                                                                                                      
+                                                                                                                      Then, remember we want to find W and b that **minimizes the cost function** not the $\hat{y}$ function. 
+                                                                                                                    
+                                                                                                                    <!-- \[ \frac{\partial}{\partial \theta_j} = \frac{1}{n} \sum\limits_{i=1}^n (h_{\theta}(x^{(i)}) - y^{(i)}) x_j^{(i)} \] (@derivateCostFunction) -->
+                                                                                                                      
+                                                                                                                      Let us set predictor and response variables.
+                                                                                                                    
+                                                                                                                    ```{r}
+                                                                                                                    #Predictor variables
+                                                                                                                    X <- as.matrix(data[, c(1,2)])
+                                                                                                                    
+                                                                                                                    #Add ones to X in the first column (matrix multiplication x b)
+                                                                                                                    X <- cbind(rep(1, nrow(X)), X)
+                                                                                                                    
+                                                                                                                    #Response variable
+                                                                                                                    Y <- as.matrix(data$label)
+                                                                                                                    ```
+                                                                                                                    
+                                                                                                                    
+                                                                                                                    ```{r}
+                                                                                                                    #Intial parameters
+                                                                                                                    initial_parameters <- rep(0, ncol(X))
+                                                                                                                    
+                                                                                                                    #Cost at inital parameters
+                                                                                                                    CostFunction(initial_parameters, X, Y)
+                                                                                                                    ```
+                                                                                                                    
+                                                                                                                    With each step of gradient descent, parameters come closer to the optimal values that will achieve the lowest cost. To do this we will set (i.e.) the iteration parameter to 1200
+                                                                                                                    
+                                                                                                                    ```{r}
+                                                                                                                    # We want to minimize the cost function. Then derivate this funcion
+                                                                                                                    TestGradientDescent <- function(iterations = 1200, X, Y) {
+                                                                                                                      
+                                                                                                                      # Initialize (b, W)
+                                                                                                                      parameters <- rep(0, ncol(X))
+                                                                                                                      # Check evolution
+                                                                                                                      print(paste("Initial Cost Function value: ", 
+                                                                                                                                  convergence <- c(CostFunction(parameters, X, Y)), sep = ""))
+                                                                                                                      
+                                                                                                                      # updating (b, W) using gradient update
+                                                                                                                      
+                                                                                                                      # Derive theta using gradient descent using optim function
+                                                                                                                      # Look for information about the "optim" function (there are other options)
+                                                                                                                      parameters_optimization <- optim(par = parameters, fn = CostFunction, X = X, Y = Y, 
+                                                                                                                                                       control = list(maxit = iterations))
+                                                                                                                      #set parameters
+                                                                                                                      parameters <- parameters_optimization$par
+                                                                                                                      
+                                                                                                                      # Check evolution
+                                                                                                                      print(paste("Final Cost Function value: ", 
+                                                                                                                                  convergence <- c(CostFunction(parameters, X, Y)), sep = ""))
+                                                                                                                      
+                                                                                                                      return(parameters) 
+                                                                                                                    }
+                                                                                                                    
+                                                                                                                    # How to use
+                                                                                                                    parameters <- TestGradientDescent(X = X, Y = Y)
+                                                                                                                    # probability of admission for student (1 = b, for the calculos)
+                                                                                                                    new_student <- c(1,25,78)
+                                                                                                                    print("Probability of admission for student:")
+                                                                                                                    print(prob_new_student <- Sigmoid(t(new_student) %*% parameters))
+                                                                                                                    ```
+                                                                                                                    Is he out? :-(
+                                                                                                                      
+                                                                                                                      Now, We're gonna to try other option
+
+```{r}
+if (!require("gradDescent")) install.packages("gradDescent")
+# load
+library("gradDescent")
+```
+
+New Gradient Descent version
+
+```{r}
+# We want to minimize the cost function. Then derivate this funcion
+TestGradientDescent2 <- function(iterations = 1200, learning_rate = 0.25, the_data) {
+  
+  # label in the last column in dataSet
+  model <- gradDescentR.learn(dataSet = the_data, featureScaling = TRUE, scalingMethod = "VARIANCE", 
+                              learningMethod = "GD", control = list(alpha = learning_rate, maxIter = iterations), 
+                              seed = 1234)
+  
+  model
+}
+
+# How to use
+TestGradientDescent2(the_data = data)
+
+# Now, the exercises. Use training and test set, change the value of alpha...
+```
+
+## Plus lesson - Unit test - Testing our code
+
+Unit tests are small functions that test your code and help you make sure everything is alright. To do this in R, the *testthat* package can be used as follows:
+
+```{r}
+# Install if not installed
+if (!require("testthat")) install.packages("testthat")
+# load
+library(testthat)
+```
+
+Now, we can check the code for the *TestGradientDescent* function.
+
+```{r}
+test_that("Test TestGradientDescent",{
+  parameters <- TestGradientDescent(X = X, Y = Y)
+  # probability of admission for student (1 = b, for the calculos)
+  new_student <- c(1,25,78)
+  prob_new_student <- Sigmoid(t(new_student) %*% parameters)
+  print(prob_new_student)
+  expect_equal(as.numeric(round(prob_new_student, digits = 4)), 0.0135)
+  # Fail, test
+  # expect_equal(as.numeric(round(prob_new_student, digits = 4)), 0.0130)
+})
+```
+
+
+
+
+# ASSIGNMENT
+
+## 1. Test the TestGradientDescent function with the training set (4_1_data.csv). Obtain the confusion matrix.
+
+```{r}
+############
+# LIBRARIES#
+############
+library(caret)
+library(MLmetrics)
+#######
+# DATA#
+#######
+#Load data
+data <- read.csv("data/4_1_data.csv")
+#Predictor variables
+X <- as.matrix(data[, c(1,2)])
+#Add ones to X in the first column (matrix multiplication x b)
+X <- cbind(rep(1, nrow(X)), X)
+#Response variable
+Y <- as.matrix(data$label)#expected
+
+################
+# COST FUNCTION#
+################
+CostFunction <- function(parameters, X, Y) {
+  n <- nrow(X)
+  # function to apply (%*% Matrix multiplication)
+  g <- Sigmoid(X %*% parameters)
+  J <- (1/n) * sum((-Y * log(g)) - ((1 - Y) * log(1 - g)))
+  return(J)
+}
+
+##########
+# SIGMOID#
+##########
+Sigmoid <- function(x) { 
+  1 / (1 + exp(-x))
+}
+
+###################
+# GRADIENT DESCENT#
+###################
+# We want to minimize the cost function. Then derivate this funcion
+TestGradientDescent <- function(iterations = 1200, X, Y) {
+  # Initialize (b, W)
+  parameters <- rep(0, ncol(X))
+  # Check evolution
+  # print(paste("Initial Cost Function value: ", 
+  #             convergence <- c(CostFunction(parameters, X, Y)), sep = ""))
+  # updating (b, W) using gradient update
+  # Derive theta using gradient descent using optim function
+  # Look for information about the "optim" function (there are other options)
+  parameters_optimization <- optim(par = parameters, fn = CostFunction, X = X, Y = Y, 
+                                   control = list(maxit = iterations))
+  #set parameters
+  parameters <- parameters_optimization$par
+  # Check evolution
+  # print(paste("Final Cost Function value: ", 
+  #             convergence <- c(CostFunction(parameters, X, Y)), sep = ""))
+  
+  return(parameters) 
+}
+
+
+###################
+# CONFUSION MATRIX#
+###################
+# > parameters
+# [1] -25.1647048   0.2062524   0.2015046
+parameters <- TestGradientDescent(X = X, Y = Y)
+#add_not_add_student: Filter students based on their scores, TestGradientDescent parameters and cut_off.
+add_not_add_student  <- function(student_scores, par = parameters, cut_off = 0.5){
+  added_as_factor <- ifelse(Sigmoid(t(student_scores) %*% parameters) > cut_off, 1, 0)
+  return(added_as_factor)
+}
+
+predicted <-factor(apply(X, 1, add_not_add_student))
+expected <- factor(Y)
+results <- confusionMatrix(data = predicted, reference = expected)
+print(results$table)
+
+
+Precision(expected, predicted, positive = NULL)
+F1_Score(expected, predicted, positive = NULL)
+
+```
+
+
+
+## 2. Obtain a graph representing how the cost function evolves depending of the number of iterations.
+
+
+We have 2 methods to see the value of the cost until it reaches the stabilization area or minimum cost:
+
+- Method 1: by giving different values to the parameters.  We can calculate the optimized parameters that would be the last values to give as inputs to our Cost Function.
+
+- Method 2: in order to see the jumps of each iteration made by the TestGradientDescent function and the optim function, we need to see the value of the Cost at each iteration performed by the TestGradientDescent function, checking the value for each iteration.
+
+```{r}
+
+################
+# COST FUNCTION#
+################
+CostFunction <- function(parameters, X, Y) {
+  n <- nrow(X)
+  # function to apply (%*% Matrix multiplication)
+  g <- Sigmoid(X %*% parameters)
+  J <- (1/n) * sum((-Y * log(g)) - ((1 - Y) * log(1 - g)))
+  return(J)
+}
+
+
+##############################################
+# INITIAL AND END PARAMETER FOR COST FUNCTION#
+##############################################
+
+###########
+# METHOD 1#
+###########
+
+# By giving different values to the parameters.  We can calculate the optimized parameters that would be the last values to give as inputs to our Cost Function.
+
+
+# Smooth
+parameters_start <- rep(0, ncol(X))
+iterations = 1200
+parameters_optimization <- optim(par = parameters_start, fn = CostFunction, X = X, Y = Y, 
+                                 control = list(maxit = iterations))
+parameters_end <- parameters_optimization$par
+
+seqParameters <- data.frame(parameter1 = seq(parameters_start[1],parameters_end[1], length.out = 100),
+                            parameter2 = seq(parameters_start[2],parameters_end[2], length.out = 100),
+                            parameter3 = seq(parameters_start[3],parameters_end[3], length.out = 100))
+cost <- c()
+for(parameters_row in 1:dim(seqParameters)[1]){
+  cost <- c(cost, CostFunction(as.double(seqParameters[parameters_row,]), X, Y))
+}
+smooth_cost <- ggplot() +
+  geom_point(aes(x = 1:100, y = cost))
+
+
+###########
+# METHOD 2#
+###########
+
+# In order to see the jumps of each iteration made by the TestGradientDescent function and the optim function, we need to see the value of the Cost at each iteration performed by the TestGradientDescent function, checking the value for each iteration.
+
+iterations <- data.frame("iter" = 0, "cost_iterations" = 0)
+
+for (i in seq(1:100)) {
+  parameters <- TestGradientDescent(iterations = i, X = X, Y = Y)
+  CostFunctionValue <- CostFunction(parameters, X, Y)
+  iterations[i,] <- c(i, CostFunctionValue)
+}
+
+ggplot(iterations,aes(x = iter , y = cost_iterations)) +
+  geom_line() +
+  xlab('Iterations') +
+  ylab('Cost')+
+  geom_point(aes(x = 1:100, y = cost))
+```
+
+
+## 3. Explore other options using the optim function (see the methods section of the documentation). Explore other ways in R for estimating the Gradient Descent.
+
+We are going to try the following methods for the optim function:  "Nelder-Mead", "BFGS", "CG", "L-BFGS-B", "SANN", "Brent". 
+```{r}
+
+# TRYING NEW METHODS:#####################################################################################
+# optim(par, fn, gr = NULL, ...,
+#       method = c("Nelder-Mead", "BFGS", "CG", "L-BFGS-B", "SANN",
+#                  "Brent"),
+#       lower = -Inf, upper = Inf,
+#       control = list(), hessian = FALSE)
+# fn:A function to be minimized (or maximized), with first argument the vector of parameters over which
+# minimization is to take place. It should return a scalar result.
+
+# Add the method to the TestGradientDescent(). We are going to use it later.
+TestGradientDescent_different_methods <- function(iterations = 1200, X, Y, method_optim) {
+  # Initialize (b, W)
+  parameters <- rep(0, ncol(X))
+  # Check evolution
+  print(paste("Initial Cost Function value: ", 
+              convergence <- c(CostFunction(parameters, X, Y)), sep = ""))
+  
+  # updating (b, W) using gradient update
+  
+  # Derive theta using gradient descent using optim function
+  # Look for information about the "optim" function (there are other options)
+  parameters_optimization <- optim(par = parameters, fn = CostFunction, X = X, Y = Y, 
+                                   control = list(maxit = iterations), method = method_optim)
+  #set parameters
+  parameters <- parameters_optimization$par
+  # Check evolution
+  print(paste("Final Cost Function value: ", 
+              convergence <- c(CostFunction(parameters, X, Y)), sep = ""))
+  return(parameters) 
+}
+
+
+
+###################
+# CONFUSION MATRIX#
+###################
+#Function to change method for the gradientdescent.
+matrix_gradientdescent_method_optim <- function(X = X, Y = Y, gradient_method_optim = "BFGS"){
+  parameters <- TestGradientDescent_different_methods(X = X, Y = Y, method_optim = gradient_method_optim  )
+  
+  #add_not_add_student: Filter students based on their scores, TestGradientDescent parameters and cut_off.
+  add_not_add_student  <- function(student_scores, par = parameters, cut_off = 0.5){
+    added_as_factor <- ifelse(Sigmoid(t(student_scores) %*% parameters) > cut_off, 1, 0)
+    return(added_as_factor)
+  }
+  
+  predicted <-factor(apply(X, 1, add_not_add_student))
+  expected <- factor(Y)
+  results <- confusionMatrix(data = predicted, reference = expected)
+  print(results$table)
+  print( parameters)
+  # cat("Precision:\n", Precision(expected, predicted, positive = NULL), "\n")
+  cat("F1_score:\n", F1_Score(expected, predicted, positive = NULL))
+}
+```
+
+Method "BFGS" is a quasi-Newton method (also known as a variable metric algorithm), specifically that published simultaneously in 1970 by Broyden, Fletcher, Goldfarb and Shanno. This uses function values and gradients to build up a picture of the surface to be optimized.
+```{r}
+set.seed(1234)
+matrix_gradientdescent_method_optim(X, Y, gradient_method_optim = "BFGS")
+```
+BFGS gives a higher F1_score. In statistical analysis of binary classification, the F1 score (also F-score or F-measure) is a measure of a test's accuracy. It considers both the precision p and the recall r of the test to compute the score.
+
+
+
+
+Method "SANN" is by default a variant of simulated annealing given in Belisle (1992). Simulated-annealing
+belongs to the class of stochastic global optimization methods. It uses only function values but
+is relatively slow. It will also work for non-differentiable functions. This implementation uses the Metropolis function for the acceptance probability. By default the next candidate point is generated from a Gaussian Markov kernel with scale proportional to the actual temperature. If a function to generate a new candidate point is given, method "SANN" can also be used to solve combinatorial optimization problems. Temperatures are decreased according to the logarithmic cooling schedule as given in Belisle (1992, p. 890); specifically, the temperature is set to temp / log(((t-1) %/% tmax)*tmax + exp(1)), where t is the current iteration step and temp and tmax are specifiable via control, see below. Note that the "SANN" method depends critically on the settings of the control parameters. It is not a general-purpose method but can be very useful in getting to a good value on a very rough surface.
+```{r}
+matrix_gradientdescent_method_optim(X, Y, gradient_method_optim = "SANN")
+```
+SANN method gives a lower F1_score than BFGS. In statistical analysis of binary classification, the F1 score (also F-score or F-measure) is a measure of a test's accuracy. It considers both the precision p and the recall r of the test to compute the score.
+
+
+
+The next following methods are not suitable for our data because of their features: 
+
+Method "CG" is a conjugate gradients method based on that by Fletcher and Reeves (1964) (but with the
+option of Polak–Ribiere or Beale–Sorenson updates). 
+```{r}
+# matrix_gradientdescent_method_optim(X, Y, gradient_method_optim = "CG")
+```
+Conjugate gradient methods will generally be more
+fragile than the BFGS method, but as they do not store a matrix they may be successful in much larger
+optimization problems.
+
+
+
+Method "L-BFGS-B" is that of Byrd et. al. (1995) which allows box constraints, that is each variable
+can be given a lower and/or upper bound. The initial value must satisfy the constraints. This uses a
+limited-memory modification of the BFGS quasi-Newton method. If non-trivial bounds are supplied,
+this method will be selected, with a warning.
+```{r}
+# matrix_gradientdescent_method_optim(X, Y, gradient_method_optim = "L-BFGS-B")
+```
+
+
+Method "Brent" is for one-dimensional problems only, using optimize(). It can be useful in cases where
+optim() is used inside other functions where only method can be specified, such as in mle from package stats4.
+```{r}
+# matrix_gradientdescent_method_optim(X, Y, gradient_method_optim = "Brent")
+```
+
+
+
+
+## 5. Optional (+0.5 - 1 points in final grade).                                                   
+                                                                                                
+- Implement the algorithm step by step using the update rule and an iterative algorithm, do not 
+use the optim function. 
+
+We've found ways to perform the optim function for only 2 parameters. But the goal of this exercise would be to do it for 3 parameters as that's the function that we want to optimize. Main idea to do this was to iteratively calculate smaller cubes on the right direction until we reached one point. But that is a brute force algorithm too hard to compute and code.
+
+- Research about regularization in logistic regression and explain it.  
+
+We can think of regularization as a penalty against complexity. Increasing the regularization strength penalizes "large" weight coefficients. The goal is to prevent that our model imagines a pattern where there is none and that generalizes well to new, unseen data.
+
+In regularization we add a new hyperparameter, lambda, to control the regularization strength. 
+Therefore, our new problem is to minimize the cost function given this added constraint.
+Intuitively, we can think of a "sphere" as our "budget." Now, our objective is still the same: we want to minimize the cost function. However, we are now constraint by the regularization term; we want to get as close as possible to the global minimum while staying within our "budget".
+
+
+```
+
+
+# References
+
+---
+references:
+- id: template
+  title: Binary classification
+  author:
+  - family: Fenner
+    given: Martin
+  container-title: Nature Materials
+  volume: 11
+  URL: 'http://dx.doi.org/10.1038/nmat3283'
+  DOI: 10.1038/nmat3283
+  issue: 4
+  publisher: Nature Publishing Group
+  page: 261-263
+  type: article-journal
+  issued:
+    year: 2012
+    month: 3
+
+- id: binaryClassification
+  title: Binary classification
+  author:
+  - family: Wikipedia - Binary Classification
+  URL: 'https://en.wikipedia.org/wiki/Binary_classification'
+  issued:
+    year: 2017
+
+- id: logisticRegression
+  title: Logistic Regression
+  author:
+  - family: Wikipedia - Logistic Regression
+  URL: 'https://en.wikipedia.org/wiki/Logistic_regression'
+  issued:
+    year: 2017
+    
+- id: MachineLearningFAQ
+  title: Machine Learning FAQ
+  author:
+  - family: Raschka
+    given: Martin
+  URL: 'https://sebastianraschka.com/faq/docs/closed-form-vs-gd.html'
+  issued:
+    year: 2017
+
+- id: learningRate
+  title: Logistic Regression and Gradient Descent
+  author:
+  - family: Magdon-Ismail
+    given: M.
+  URL: 'http://www.cs.rpi.edu/~magdon/courses/LFD-Slides/SlidesLect09.pdf'
+  issued:
+    year: 2017
+
+- id: rbloggers
+  title: Logistic regression with R
+  author:
+  - family: Gondaliya
+    given: Amar
+  URL: 'https://www.r-bloggers.com/logistic-regression-with-r-step-by-step-implementation-part-2/'
+  issued:
+    year: 2013
+    
+- id: derivateCostFunction
+  title: Derivate Cost Function for Logistic Regression
+  author:
+  - family: Fok
+    given: Sam
+  URL: 'http://sambfok.blogspot.com.es/2012/08/partial-derivative-logistic-regression.html'
+  issued:
+    year: 2012
+---  
+Some ideas from (recommended course)
+https://www.coursera.org/specializations/deep-learning

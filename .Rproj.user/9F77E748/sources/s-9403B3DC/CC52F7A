@@ -1,0 +1,26 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1583331673195.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3511850450",
+    "id" : "CC52F7A",
+    "lastKnownWriteTime" : 1583331682,
+    "last_content_update" : 1583331682598,
+    "path" : "~/Google Drive/DATA SCIENCE-TRADING/1_CUNEF/Machine_learning/Machine_learning_Code/Jordi_Tarroch_Mejon_Tarea1/gradientDescentCostFunctions/gradientDescentCostFunctions.R",
+    "project_path" : "gradientDescentCostFunctions.R",
+    "properties" : {
+        "cursorPosition" : "689,0",
+        "scrollLine" : "671",
+        "tempName" : "Untitled1"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
